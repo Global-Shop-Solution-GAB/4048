@@ -1,0 +1,221 @@
+Program.Sub.ScreenSU.Start
+gui.F_CONF..create
+gui.F_CONF..caption("Confirmation option")
+gui.F_CONF..size(3180,2685)
+gui.F_CONF..position(0,0)
+gui.F_CONF..event(unload,f_conf_unload)
+gui.F_CONF..alwaysontop(False)
+gui.F_CONF..fontname("Arial")
+gui.F_CONF..fontsize(8)
+gui.F_CONF..forecolor(0)
+gui.F_CONF..fontstyle(,,,,)
+gui.F_CONF..BackColor(-2147483633)
+gui.F_CONF..controlbox(True)
+gui.F_CONF..maxbutton(False)
+gui.F_CONF..minbutton(False)
+gui.F_CONF..mousepointer(0)
+gui.F_CONF..moveable(True)
+gui.F_CONF..sizeable(True)
+gui.F_CONF..ShowInTaskBar(True)
+gui.F_CONF..titlebar(True)
+gui.F_CONF.frmopt.create(frame)
+gui.F_CONF.frmopt.caption("")
+gui.F_CONF.frmopt.size(2625,1410)
+gui.F_CONF.frmopt.position(100,100)
+gui.F_CONF.frmopt.visible(True)
+gui.F_CONF.frmopt.fontname("Arial")
+gui.F_CONF.frmopt.fontsize(8)
+gui.F_CONF.chkConf.create(checkbox)
+gui.F_CONF.chkConf.caption("Confirmed")
+gui.F_CONF.chkConf.visible(True)
+gui.F_CONF.chkConf.size(1170,255)
+gui.F_CONF.chkConf.zorder(0)
+gui.F_CONF.chkConf.position(115,290)
+gui.F_CONF.chkConf.enabled(True)
+gui.F_CONF.chkConf.alignment(0)
+gui.F_CONF.chkConf.parent("frmopt")
+gui.F_CONF.chkConf.fontname("Arial")
+gui.F_CONF.chkConf.fontsize(8)
+gui.F_CONF.lblUserID.create(label,"User ID:",True,645,255,1,110,725,True,0,Arial,8,-2147483633,0)
+gui.F_CONF.lblUserID.parent("frmopt")
+gui.F_CONF.lblDate.create(label,"Date:",True,525,255,1,1345,725,True,0,Arial,8,-2147483633,0)
+gui.F_CONF.lblDate.parent("frmopt")
+gui.F_CONF.txtUserID.create(textbox,"",True,1125,300,0,70,940,False,0,Arial,8,15790320,1)
+gui.F_CONF.txtUserID.parent("frmopt")
+gui.F_CONF.txtDate.create(textbox,"",True,1215,300,0,1300,925,False,0,Arial,8,15790320,1)
+gui.F_CONF.txtDate.parent("frmopt")
+gui.F_CONF.cmdSave.create(button)
+gui.F_CONF.cmdSave.caption("Save")
+gui.F_CONF.cmdSave.visible(True)
+gui.F_CONF.cmdSave.size(855,375)
+gui.F_CONF.cmdSave.zorder(0)
+gui.F_CONF.cmdSave.position(1010,1655)
+gui.F_CONF.cmdSave.enabled(True)
+gui.F_CONF.cmdSave.fontname("Arial")
+gui.F_CONF.cmdSave.fontsize(8)
+gui.F_CONF.cmdSave.event(click,cmdsave_click)
+gui.F_CONF.chkConf.tabstop(True)
+gui.F_CONF.chkConf.tabindex(1)
+gui.F_CONF.cmdSave.tabstop(True)
+gui.F_CONF.cmdSave.tabindex(2)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+' RRC
+' 11/09/15
+
+V.Local.sPO.Declare(String)
+
+F.Intrinsic.Control.If(V.Caller.Hook,=,"16850")
+	V.Passed.000065.Set("Confirm")
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.ElseIf(V.Caller.Hook,=,"16890")
+	V.Local.sPO.Set(V.Passed.000008)
+	F.Intrinsic.Control.If(V.Local.sPO,=,"0")
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndIf
+	F.ODBC.Connection!conx.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+	F.Intrinsic.Control.CallSub(F_checktable)
+	F.Intrinsic.Control.CallSub(F_conf_load)
+	Gui.F_CONF..Show
+F.Intrinsic.Control.Else
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndIf
+
+Program.Sub.Main.End
+
+program.sub.cmdsave_click.start
+F.Intrinsic.Control.SetErrorHandler("cmdsave_click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+V.Local.sSql.Declare(String)
+V.Local.sPO.Declare(String)
+
+V.Local.sPO.Set(V.Passed.000008)
+F.Intrinsic.String.LPad(V.Local.sPO,"0",7,V.Local.sPO)
+F.Intrinsic.String.Concat("SELECT * FROM GAB_4048_CONFCHK WHERE PURCHASE_ORDER='",V.Local.sPO,"'",V.Local.sSql)
+F.ODBC.Connection!conx.OpenRecordsetRW("rstSave",V.Local.sSql)
+F.Intrinsic.Control.If(V.ODBC.conx!rstSave.EOF,=,"True")
+	F.ODBC.conx!rstSave.AddNew
+	F.ODBC.conx!rstSave.Set!PURCHASE_ORDER(V.Local.sPO)
+F.Intrinsic.Control.Endif
+F.Intrinsic.Control.If(V.Screen.F_CONF!chkConf.Value,=,1)
+	F.ODBC.conx!rstSave.Set!CONF("1")
+F.Intrinsic.Control.Else
+	F.ODBC.conx!rstSave.Set!CONF("0")
+F.Intrinsic.Control.EndIf
+F.ODBC.conx!rstSave.Set!GS_USER(V.Caller.User)
+Gui.F_CONF.txtUserID.Text(V.Caller.User)
+F.ODBC.conx!rstSave.Set!DATE_CONF(V.Ambient.Date)
+Gui.F_CONF.txtDate.Text(V.Ambient.Date)
+F.ODBC.conx!rstSave.Update
+F.ODBC.conx!rstSave.Close
+F.Intrinsic.UI.Msgbox("Information saved","Confimation:")
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdsave_click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_4048_PO_CONFCHK.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.Debug.SetLA(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+program.sub.cmdsave_click.end
+
+program.sub.f_conf_unload.start
+F.Intrinsic.Control.SetErrorHandler("f_conf_unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.ODBC.Connection!conx.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("f_conf_unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_4048_PO_CONFCHK.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.Debug.SetLA(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+program.sub.f_conf_unload.end
+
+Program.Sub.f_conf_load.Start
+F.Intrinsic.Control.SetErrorHandler("f_conf_load_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sSql.Declare(String)
+V.Local.sPO.Declare(String)
+
+V.Local.sPO.Set(V.Passed.000008)
+F.Intrinsic.String.LPad(V.Local.sPO,"0",7,V.Local.sPO)
+F.Intrinsic.String.Concat("SELECT * FROM GAB_4048_CONFCHK WHERE PURCHASE_ORDER='",V.Local.sPO,"'",V.Local.sSql)
+F.ODBC.Connection!conx.OpenRecordsetRO("rstLoad",V.Local.sSql)
+F.Intrinsic.Control.If(V.ODBC.conx!rstLoad.EOF,=,"False")
+	F.Intrinsic.Control.If(V.ODBC.conx!rstLoad.FieldVal!CONF,=,"1")
+		Gui.F_CONF.chkConf.Value(1)
+	F.Intrinsic.Control.Else
+		Gui.F_CONF.chkConf.Value(0)
+	F.Intrinsic.Control.Endif
+	Gui.F_CONF.txtUserID.Text(V.ODBC.conx!rstLoad.FieldVal!GS_USER)
+	Gui.F_CONF.txtDate.Text(V.ODBC.conx!rstLoad.FieldVal!DATE_CONF)
+F.Intrinsic.Control.EndIf
+
+F.ODBC.conx!rstLoad.Close
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("f_conf_load_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_4048_PO_CONFCHK.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.Debug.SetLA(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.f_conf_load.End
+
+Program.Sub.f_CheckTable.Start
+F.Intrinsic.Control.SetErrorHandler("f_CheckTable_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+V.Local.bTable.Declare(Boolean)
+V.Local.sSql.Declare(String)
+
+F.ODBC.Connection!conx.TableExists("GAB_4048_CONFCHK",V.Local.bTable)
+F.Intrinsic.Control.If(V.Local.bTable,=,False)
+	V.Local.sSql.Set("CREATE TABLE GAB_4048_CONFCHK (PURCHASE_ORDER CHAR(7), CONF CHAR(1), GS_USER CHAR(8),DATE_CONF DATE);")
+	F.ODBC.Connection!conx.Execute(V.Local.sSql)
+	F.ODBC.Connection!conx.Execute("CREATE INDEX GAB_4048_CONFCHK00 ON GAB_4048_CONFCHK(PURCHASE_ORDER); ")
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("f_CheckTable_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_4048_PO_CONFCHK.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.Debug.SetLA(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.f_CheckTable.End
+
+Program.Sub.Comments.Start
+${$0$}$GAB_4048_CONFCHK$}$RRODRIGUEZ$}$6/27/2013
+${$1$}$$}$$}$1$}$16890$}$PUS064GH-SCRIPT-1-HOOK (PO MAINTENANCE)$}$6/27/2013 4:23:54 PM$}$(Program: PUR064GH ; Screen: PUS064GH)
+
+${$1$}$$}$$}$0$}$16850$}$PUS064GH-POPULATE-HOOK (PO MAINTENANCE)$}$6/27/2013 4:23:29 PM$}$(Program: PUR064GH ; Screen: PUS064GH)
+
+${$4$}$0$}$$}$0$}$-1$}$SUPERVSR$}$10/15/2015 8:20:07 AM$}$Changed DATE by DATE_DUE
+Program.Sub.Comments.End
+
